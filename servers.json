@@ -1,0 +1,15 @@
+{
+    "Servers": {
+      "1": {
+        "Name": "AC DB",
+        "Group": "Servers",
+        "Port": 5432,
+        "Username": "admin",
+        "Host": "db",
+        "SSLMode": "prefer",
+        "MaintenanceDB": "postgres",
+        "PassFile": "/tmp/pgpassfile",
+        "fe_sendauth": "secret"
+      }
+    }
+  }
