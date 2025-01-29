@@ -1,0 +1,244 @@
+x-app-base: &app-base
+    build:
+        context: ./
+        dockerfile: Dockerfile
+    restart: unless-stopped
+    hostname: app
+    working_dir: /var/www/
+    logging:
+        driver: "gelf"
+        options:
+            gelf-address: "udp://172.30.31.56:${GRAYLOG_API_PORT}"
+            tag: "${GRAYLOG_API_TAG}"
+
+x-db-base: &db-base
+    build:
+        context: ./.docker/db
+        dockerfile: Dockerfile
+    environment:
+        - POSTGRES_PASSWORD=${DB_PASSWORD}
+        - POSTGRES_USER=${DB_USERNAME}
+        - POSTGRES_DB=${DB_DATABASE}
+    restart: unless-stopped
+    volumes:
+        - /opt/irondbpre:/var/lib/postgresql/data:rw
+    ports:
+        - "${DB_DEPLOY_PORT}:5432"
+    healthcheck:
+        test:
+            [
+                "CMD-SHELL",
+                "pg_isready -d $DB_DATABASE -U $DB_USERNAME"
+            ]
+        interval: 5s
+        timeout: 5s
+        retries: 5
+    logging:
+        driver: "gelf"
+        options:
+            gelf-address: "udp://172.30.31.56:${GRAYLOG_BD_PORT}"
+            tag: "${GRALOG_DB_TAG}"
+
+x-nginx-base: &nginx-base
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+        - "${NGINX_DEPLOY_PORT}:80"
+    logging:
+        driver: "gelf"
+        options:
+            gelf-address: "udp://172.30.31.56:${GRAYLOG_NGINX_PORT}"
+            tag: "${GRAYLOG_NGINX_TAG}"
+
+services:
+    # Production
+    app-prod:
+        <<: *app-base
+        profiles:
+            - prod
+        container_name: app-iron-pro
+        networks:
+            - abcopilot_prod
+        
+    db-prod:
+        <<: *db-base
+        container_name: db-iron-pro
+        hostname: "${DB_HOST}"
+        profiles:
+            - prod
+        networks:
+            - abcopilot_prod
+        
+
+    nginx-prod:
+        <<: *nginx-base
+        profiles:
+            - prod
+        container_name: nginx-iron-pro
+        volumes:
+            - ./:/var/www
+            - ./.docker/nginx:/etc/nginx/conf.d/
+        networks:
+            - abcopilot_prod
+        
+
+    queue-prod:
+        <<: *app-base
+        profiles:
+            - prod
+        image: abcopilot-prod
+        container_name: queue-iron-pro
+        networks:
+            - abcopilot_prod
+        entrypoint: [ "/usr/bin/script_queue.sh"]
+        logging:
+            driver: "gelf"
+            options:
+                gelf-address: "udp://172.30.31.56:${GRAYLOG_QUEUE_PORT}"
+                tag: "${GRAYLOG_QUEUE_TAG}"
+    # Staging
+    app-staging:
+        <<: *app-base
+        profiles:
+            - stagin
+        image: abcopilot-staging
+        container_name: app-iron-pre
+        networks:
+            - abcopilot_staging
+        
+    db-staging:
+        <<: *db-base
+        profiles:
+            - stagin
+        container_name: db-iron-pre
+        hostname: "${DB_HOST}"
+        networks:
+            - abcopilot_staging
+       
+    nginx-staging:
+        <<: *nginx-base
+        profiles:
+            - stagin
+        container_name: nginx-iron-pre
+        volumes:
+            - ./:/var/www
+            - ./.docker/nginx:/etc/nginx/conf.d/
+        networks:
+            - abcopilot_staging
+        
+    queue-staging:
+        <<: *app-base
+        profiles:
+            - stagin
+        image: abcopilot-staging
+        container_name: queue-iron-pre
+        networks:
+            - abcopilot_staging
+        entrypoint: [ "/usr/bin/script_queue.sh"]
+        logging:
+            driver: "gelf"
+            options:
+                gelf-address: "udp://172.30.31.56:${GRAYLOG_QUEUE_PORT}"
+                tag: "${GRAYLOG_QUEUE_TAG}"
+    
+    # Testing
+    app-test:
+        <<: *app-base
+        profiles:
+            - test
+        image: abcopilot-test
+        volumes:
+            - ./:/var/www
+        container_name: app-iron-test
+        networks:
+            - abcopilot_test
+
+    db-test:
+        <<: *db-base
+        ports:
+        - "${TEST_DB_PORT}:5432"
+        profiles:
+            - test
+        container_name: db-iron-test
+        hostname: "${DB_HOST}"
+        networks:
+            - abcopilot_test
+
+    nginx-test:
+        <<: *nginx-base
+        profiles:
+            - test
+        ports:
+        - "${TEST_NGINX_PORT}:80"
+        container_name: nginx-iron-test
+        volumes:
+            - ./:/var/www
+            - ./.docker/nginx:/etc/nginx/conf.d/
+        networks:
+            - abcopilot_test
+
+    queue-test:
+        <<: *app-base
+        profiles:
+            - test
+        image: abcopilot-test
+        volumes:
+            - ./:/var/www
+        container_name: queue-iron-test
+        entrypoint: [ "/usr/bin/script_queue.sh"]
+        networks:
+            - abcopilot_test
+    
+    # Delovopment
+    app-dev:
+        <<: *app-base
+        profiles:
+            - dev
+        image: abcopilot-dev
+        volumes:
+            - ./:/var/www
+        container_name: app-iron-dev
+        networks:
+            - abcopilot_dev
+
+    db-dev:
+        <<: *db-base
+        profiles:
+            - dev
+        container_name: db-iron-dev
+        hostname: "${DB_HOST}"
+        networks:
+            - abcopilot_dev
+
+    nginx-dev:
+        <<: *nginx-base
+        profiles:
+            - dev
+        container_name: nginx-iron-dev
+        volumes:
+            - ./:/var/www
+            - ./.docker/nginx:/etc/nginx/conf.d/
+        networks:
+            - abcopilot_dev
+
+    queue-dev:
+        <<: *app-base
+        profiles:
+            - dev
+        image: abcopilot-dev
+        volumes:
+            - ./:/var/www
+        container_name: queue-iron-dev
+        entrypoint: [ "/usr/bin/script_queue.sh"]
+        networks:
+            - abcopilot_dev
+
+networks:
+    abcopilot_prod:
+        driver: bridge
+    abcopilot_staging:
+        driver: bridge
+    abcopilot_test:
+        driver: bridge
+    abcopilot_dev:
+        driver: bridge

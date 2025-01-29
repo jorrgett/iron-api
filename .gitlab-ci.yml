@@ -1,0 +1,332 @@
+stages:
+  - clean
+  - build
+  - sql
+  - test
+  - deploy
+  - final
+  - migracion
+
+######################################### CLEAN KARATE
+
+clean_karate_pre:
+  cache: []
+  stage: clean
+  only:
+    - stagin
+  tags:
+    - karateiron
+  script:
+    - docker kill $(docker ps -q)
+    - docker-clean
+    - docker image prune -af
+    - docker builder prune -af
+    - docker system prune -af
+
+clean_karate_pro:
+  cache: []
+  stage: clean
+  only:
+    - main
+  tags:
+    - karateiron
+  script:
+    - docker kill $(docker ps -q)
+    - docker-clean
+    - docker image prune -af
+    - docker builder prune -af
+    - docker system prune -af
+
+clean_karate_canary:
+  cache: []
+  stage: clean
+  only:
+    - canary
+  tags:
+    - karateiron
+  script:
+    - docker kill $(docker ps -q)
+    - docker-clean
+    - docker image prune -af
+    - docker builder prune -af
+    - docker system prune -af
+
+
+######################################### BUILD
+
+build_dev:
+  stage: build
+  only:
+    - develop
+  tags:
+    - iron-runner-dev
+  script:
+    - rundevgit dev /home/gitlab-runner/builds/8yybNH66/0/develop/iron-api
+    - cd /home/gitlab-runner/dev
+    - cd config
+    - mkdir firebase
+    - cd /home/gitlab-runner/dev
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/dev/env.example .env
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/dev/private.pem ./storage/jwt/private.pem
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/dev/public.pem ./storage/jwt/public.pem
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/dev/firebase-config.json ./config/firebase/firebase-config.json
+    - chmod -v 777 .env
+    - rundesplegar
+
+build_karate_pre:
+  cache: []
+  stage: build
+  only:
+    - stagin
+  tags:
+    - karateiron
+  script:
+    - rundevgit ironapipre /home/gitlab-runner/builds/XZvzPzSj/0/develop/iron-api $mypassword
+    - cd /home/gitlab-runner/ironapipre/
+    - cd config
+    - mkdir firebase
+    - cd /home/gitlab-runner/ironapipre/
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pre/env.example .env
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pre/private.pem ./storage/jwt/private.pem
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pre/public.pem ./storage/jwt/public.pem
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pre/firebase-config.json ./config/firebase/firebase-config.json
+    - cd /home/gitlab-runner/ironapipre 
+    - rundesplegar
+
+build_karate_pro:
+  cache: []
+  stage: build
+  only:
+    - main
+  tags:
+    - karateiron
+  script:
+    - rundevgit ironapipro /home/gitlab-runner/builds/XZvzPzSj/0/develop/iron-api $mypassword
+    - cd /home/gitlab-runner/ironapipro/
+    - cd config
+    - mkdir firebase
+    - cd /home/gitlab-runner/ironapipro/
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/env.example .env
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/private.pem ./storage/jwt/private.pem
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/public.pem ./storage/jwt/public.pem
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/firebase-config.json ./config/firebase/firebase-config.json
+    - cd /home/gitlab-runner/ironapipro
+    - rundesplegar
+
+build_karate_canary:
+  cache: []
+  stage: build
+  only:
+    - canary
+  tags:
+    - karateiron
+  script:
+    - rundevgit ironapipro /home/gitlab-runner/builds/XZvzPzSj/0/develop/iron-api $mypassword
+    - cd /home/gitlab-runner/ironapipro/
+    - cd config
+    - mkdir firebase
+    - cd /home/gitlab-runner/ironapipro/
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/env.example .env
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/private.pem ./storage/jwt/private.pem
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/public.pem ./storage/jwt/public.pem
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/firebase-config.json ./config/firebase/firebase-config.json
+    - cd /home/gitlab-runner/ironapipro
+    - rundesplegar
+
+######################################### SQL
+
+sql_karate_pre:
+  cache: []
+  stage: sql
+  only:
+    - stagin
+  tags:
+    - karateiron
+  script:
+    - rm -f /home/gitlab-runner/*.dump
+    - PGPASSWORD=$sqlironpre pg_dump -Fc -h 13.56.184.94 -p 5005 -U admin -d ABCopilot_db > /home/gitlab-runner/abcopilot-staging.dump
+    - PGPASSWORD=$sqlironpre pg_restore --single-transaction -h 127.0.0.1 -p 9002 -U admin -d ABCopilot_db /home/gitlab-runner/abcopilot-staging.dump
+    - docker exec -t app-iron-test php artisan migrate
+
+sql_karate_pro:
+  cache: []
+  stage: sql
+  only:
+    - main
+  tags:
+    - karateiron
+  script:
+    - rm -f /home/gitlab-runner/*.dump
+    - PGPASSWORD=$sqlironpro pg_dump -Fc -h 54.219.234.158 -p 5004 -U admin -d ABCopilot_db > /home/gitlab-runner/abcopilot-pro.dump
+    - PGPASSWORD=$sqlironpro pg_restore --single-transaction -h 127.0.0.1 -p 9002 -U admin -d ABCopilot_db /home/gitlab-runner/abcopilot-pro.dump
+    - docker exec -t app-iron-test php artisan migrate
+
+sql_karate_canary:
+  cache: []
+  stage: sql
+  only:
+    - canary
+  tags:
+    - karateiron
+  script:
+    - rm -f /home/gitlab-runner/*.dump
+    - PGPASSWORD=$sqlironpro pg_dump -Fc -h 54.219.234.158 -p 5004 -U admin -d ABCopilot_db > /home/gitlab-runner/abcopilot-pro.dump
+    - PGPASSWORD=$sqlironpro pg_restore --single-transaction -h 127.0.0.1 -p 9002 -U admin -d ABCopilot_db /home/gitlab-runner/abcopilot-pro.dump
+    - docker exec -t app-iron-test php artisan migrate
+
+
+######################################### TEST
+
+test_karate_pre:
+  cache: []
+  stage: test
+  only:
+    - stagin
+  tags:
+    - karateiron
+  script:
+    - rm -rf /home/gitlab-runner/pruebas
+    - mkdir -p /home/gitlab-runner/pruebas
+    - cd /home/gitlab-runner/pruebas
+    - git clone https://github.com/sinfallas/karate-labs-docker.git .
+    - mkdir -p /home/gitlab-runner/pruebas/test
+    - cp -f /home/gitlab-runner/ironapipre/karate_tests/pre/*.feature /home/gitlab-runner/pruebas/test/
+    - docker compose up -d
+    - docker exec -t karatelabs mvn clean test
+    - docker compose down
+
+test_karate_pro:
+  cache: []
+  stage: test
+  only:
+    - main
+  tags:
+    - karateiron
+  script:
+    - rm -rf /home/gitlab-runner/pruebas
+    - mkdir -p /home/gitlab-runner/pruebas
+    - cd /home/gitlab-runner/pruebas
+    - git clone https://github.com/sinfallas/karate-labs-docker.git .
+    - mkdir -p /home/gitlab-runner/pruebas/test
+    - cp -f /home/gitlab-runner/ironapipro/karate_tests/pro/*.feature /home/gitlab-runner/pruebas/test/
+    - docker compose up -d
+    - docker exec -t karatelabs mvn clean test
+    - docker compose down
+
+test_karate_canary:
+  cache: []
+  stage: test
+  only:
+    - canary
+  tags:
+    - karateiron
+  script:
+    - rm -rf /home/gitlab-runner/pruebas
+    - mkdir -p /home/gitlab-runner/pruebas
+    - cd /home/gitlab-runner/pruebas
+    - git clone https://github.com/sinfallas/karate-labs-docker.git .
+    - mkdir -p /home/gitlab-runner/pruebas/test
+    - cp -f /home/gitlab-runner/ironapipro/karate_tests/pro/*.feature /home/gitlab-runner/pruebas/test/
+    - docker compose up -d
+    - docker exec -t karatelabs mvn clean test
+    - docker compose down
+
+######################################### DEPLOY
+
+deploy_real_pre:
+  cache: []
+  stage: deploy
+  only:
+    - stagin
+  tags:
+    - ironapipremigrated2
+  script:
+    - rundevgit ironapipre /home/gitlab-runner/builds/FyPfrKPc/0/develop/iron-api
+    - cd /home/gitlab-runner/ironapipre/
+    - cd config
+    - mkdir firebase
+    - cd /home/gitlab-runner/ironapipre/
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pre/env.example .env
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pre/private.pem ./storage/jwt/private.pem
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pre/public.pem ./storage/jwt/public.pem
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pre/firebase-config.json ./config/firebase/firebase-config.json
+    - docker compose --env-file=.env -f docker-compose.yml --profile stagin build --no-cache
+    - docker compose --env-file=.env -f docker-compose.yml --profile stagin down
+    - docker compose --env-file=.env -f docker-compose.yml --profile stagin up -d
+    - docker exec -t app-iron-pre composer config -g repo.packagist composer https://packagist.org
+    - docker exec -t app-iron-pre composer install --no-scripts
+    - docker exec -t app-iron-pre php artisan migrate
+
+deploy_real_pro:
+  cache: []
+  stage: deploy
+  only:
+    - main
+  tags:
+    - iron-api-pro-new6
+  script:
+    - rundevgit ironapipro /home/gitlab-runner/builds/iF-w3ntP/0/develop/iron-api $mypassword
+    - cd /home/gitlab-runner/ironapipro/
+    - cd config
+    - mkdir firebase
+    - cd /home/gitlab-runner/ironapipro/
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/env.example .env
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/private.pem ./storage/jwt/private.pem
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/public.pem ./storage/jwt/public.pem
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/firebase-config.json ./config/firebase/firebase-config.json
+    - rundesplegar
+
+deploy_real_canary:
+  cache: []
+  stage: deploy
+  only:
+    - canary
+  tags:
+    - iron-api-pro-new6
+  script:
+    - rundevgit ironapipro /home/gitlab-runner/builds/iF-w3ntP/0/develop/iron-api $mypassword
+    - cd /home/gitlab-runner/ironapipro/
+    - cd config
+    - mkdir firebase
+    - cd /home/gitlab-runner/ironapipro/
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/env.example .env
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/private.pem ./storage/jwt/private.pem
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/public.pem ./storage/jwt/public.pem
+    - AWS_ACCESS_KEY_ID=$AWS_IAM_USER_GITLAB_ACCESSKEY AWS_SECRET_ACCESS_KEY=$AWS_IAM_USER_GITLAB_SECRETKEY aws s3 cp s3://iron-sync/pro/firebase-config.json ./config/firebase/firebase-config.json
+    - rundesplegar
+
+######################################### FINAL
+
+final_real_canary:
+  cache: []
+  stage: final
+  only:
+    - canary
+  tags:
+    - karateiron
+  script:
+    - rm -f /home/gitlab-runner/*.dump
+    - PGPASSWORD=$sqlironpro pg_dump -Fc -h 54.219.234.158 -p 5004 -U admin -d ABCopilot_db > /home/gitlab-runner/abcopilot-pro.dump
+    - PGPASSWORD=$sqlironpro pg_restore --single-transaction -h 54.219.234.158 -p 5004 -U admin -d ABCopilot_db /home/gitlab-runner/abcopilot-pro.dump
+
+######################################### MIGRACION PRO
+
+migracion_real_pro:
+  cache: []
+  stage: migracion
+  only:
+    - main
+  tags:
+    - iron-api-pro-new6
+  script:
+    - docker exec -t app-iron-pro php artisan migrate
+
+migracion_real_canary:
+  cache: []
+  stage: migracion
+  only:
+    - canary
+  tags:
+    - iron-api-pro-new6
+  script:
+    - docker exec -t app-iron-pro php artisan migrate

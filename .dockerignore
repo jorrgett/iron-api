@@ -1,0 +1,22 @@
+# Control de versiones
+.git
+.gitignore
+.gitattributes
+.gitlab-ci.yml
+
+# IDE / Editor
+.vscode/
+.idea/
+.editorconfig
+
+# Archivos locales de Docker
+docker-compose.yml
+Dockerfile
+
+# Logs y backups
+*.log
+package.json
+package-lock.json
+changelog
+CHANGELOG.md
+README.md

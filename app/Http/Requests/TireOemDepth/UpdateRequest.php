@@ -1,0 +1,31 @@
+<?php
+
+namespace App\Http\Requests\TireOemDepth;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class UpdateRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'tire_brand_id' => 'filled|exists:tire_brands,odoo_id',
+            'tire_model_id' => 'filled|exists:tire_models,odoo_id',
+            'tire_size_id'  => 'filled|exists:tire_sizes,odoo_id',
+            'otd'           => 'filled|numeric',
+        ];
+    }
+}
